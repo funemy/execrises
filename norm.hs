@@ -165,8 +165,14 @@ test1 =
     let expr = App (App (Var (Name "plus")) (church 2)) (church 3)
      in normalize expr
 
--- Even if we have some reducible terms wrapped inside a lambda, the lambda body will still be normalized.
+-- Even if we have some reducible terms wrapped inside a lambda, the lambda body will still be normalized by `readback`
 test2 :: Res Expr
 test2 =
     let expr = Lam (Name "x") (App (App (Var (Name "plus")) (church 2)) (church 3))
+     in normalize expr
+
+-- \x. x (\x. x)
+test3 :: Res Expr
+test3 =
+    let expr = Lam (Name "x") (App (Var (Name "x")) (Lam (Name "x") (Var (Name "x"))))
      in normalize expr
