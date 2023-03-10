@@ -82,6 +82,7 @@ checkTy (If b t1 t2) ty    = do
                     _ -> return Nothing
             else return Nothing
         Nothing  -> return Nothing
+-- subsumption
 checkTy t ty = do
     maybeTy' <- inferTy t
     case maybeTy' of
