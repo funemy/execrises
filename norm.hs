@@ -1,36 +1,35 @@
 module Normalizer where
 
-import           Data.Bifunctor (second)
-import           Prelude        hiding (lookup)
+import Data.Bifunctor (second)
+import Prelude hiding (lookup)
 
 newtype Name = Name String
     deriving (Eq)
 
 instance Show Name where
-  show (Name s) = s
+    show (Name s) = s
 
-data Expr =
-    Var Name
+data Expr
+    = Var Name
     | Lam Name Expr
     | App Expr Expr
     deriving (Eq)
 
 instance Show Expr where
-  show (Var n)     = show n
-  show (Lam n e)   = "λ" ++ show n ++ "." ++ show e
-  show (App e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
-
+    show (Var n) = show n
+    show (Lam n e) = "λ" ++ show n ++ "." ++ show e
+    show (App e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
 
 -- Value is a semi-normal form
 -- Notice that VClosure is not a fully normal form,
 -- where the Expr (i.e., the closure body) has not been normalized
-data Value =
-    VClosure (Env Value) Name Expr
+data Value
+    = VClosure (Env Value) Name Expr
     | VNeutral Neutral
     deriving (Show, Eq)
 
-data Neutral =
-    NVar Name
+data Neutral
+    = NVar Name
     | NApp Neutral Value
     deriving (Show, Eq)
 
@@ -41,7 +40,7 @@ emptyEnv :: Env v
 emptyEnv = Env []
 
 instance Functor Env where
-  fmap f (Env xs) = Env (map (second f) xs)
+    fmap f (Env xs) = Env (map (second f) xs)
 
 newtype Msg = Msg String
     deriving (Show)
@@ -49,7 +48,7 @@ newtype Msg = Msg String
 type Res v = Either Msg v
 
 failure :: String -> Res v
-failure =  Left . Msg
+failure = Left . Msg
 
 lookup :: Env v -> Name -> Res v
 lookup (Env []) (Name n) = failure ("Not found identifier " ++ n)
@@ -65,11 +64,11 @@ extend (Env xs) n val = Env ((n, val) : xs)
 -- The proposed name will be returned if it is non-conflicting
 freshen :: [Name] -> Name -> Name
 freshen used x
-    | x `elem` used  = freshen used (nextName x)
+    | x `elem` used = freshen used (nextName x)
     | otherwise = x
-    where
-        nextName :: Name -> Name
-        nextName (Name s) = Name (s ++ "'")
+  where
+    nextName :: Name -> Name
+    nextName (Name s) = Name (s ++ "'")
 
 -- Given an environment, evaluate an expression to a value (or an error message)
 -- The implementation for Lam and App is worth noticing.
@@ -77,7 +76,7 @@ freshen used x
 -- Applications thus apply a closure to an argument via a helper function `apply`, which in turn extend the context (with the argument) and evaluate the lambda body
 -- Another way of implementing untyped lambda calculus is to define substitution (refer to TAPL's impl).
 eval :: Env Value -> Expr -> Res Value
-eval env (Var n)   = lookup env n
+eval env (Var n) = lookup env n
 eval env (Lam n b) = return $ VClosure env n b
 eval env (App f a) = do
     fun <- eval env f
@@ -95,9 +94,9 @@ readback used closure@(VClosure _ n _) =
     let n' = freshen used n
         used' = n' : used
      in do
-        val <- apply closure (VNeutral (NVar n'))
-        b' <- readback used' val
-        return $ Lam n' b'
+            val <- apply closure (VNeutral (NVar n'))
+            b' <- readback used' val
+            return $ Lam n' b'
 readback _ (VNeutral (NVar n)) = return $ Var n
 readback used (VNeutral (NApp neu val)) = do
     neu' <- readback used (VNeutral neu)
@@ -141,13 +140,13 @@ plus =
 church :: Int -> Expr
 church n
     | n == 0 = zero
-    | otherwise = App (Var (Name "add1")) (church (n-1))
+    | otherwise = App (Var (Name "add1")) (church (n - 1))
 
 -- top-level definitions
 toplevels :: [(Name, Expr)]
-toplevels = [
-    add1,
-    plus
+toplevels =
+    [ add1
+    , plus
     ]
 
 -- Initalize the environment from an empty one and add a set of top-level definitions to it.
@@ -160,12 +159,14 @@ normalize e = do
     val <- eval initEnv' e
     readback [] val
 
+-- plus 2 3
 test1 :: Res Expr
 test1 =
     let expr = App (App (Var (Name "plus")) (church 2)) (church 3)
      in normalize expr
 
 -- Even if we have some reducible terms wrapped inside a lambda, the lambda body will still be normalized by `readback`
+-- \x -> plus 2 3
 test2 :: Res Expr
 test2 =
     let expr = Lam (Name "x") (App (App (Var (Name "plus")) (church 2)) (church 3))
@@ -175,4 +176,25 @@ test2 =
 test3 :: Res Expr
 test3 =
     let expr = Lam (Name "x") (App (Var (Name "x")) (Lam (Name "x") (Var (Name "x"))))
+     in normalize expr
+
+-- Error: open term
+-- x
+test4 :: Res Expr
+test4 =
+    let expr = Var (Name "x")
+     in normalize expr
+
+-- Error: open term
+-- x y
+test5 :: Res Expr
+test5 =
+    let expr = App (Var (Name "x")) (Var (Name "y"))
+     in normalize expr
+
+-- Error: open term
+-- x x
+test6 :: Res Expr
+test6 =
+    let expr = App (Var (Name "x")) (Var (Name "x"))
      in normalize expr
