@@ -28,6 +28,9 @@ let fresh_var () =
 exception Unreachable
 
 (* reflect is doing one thing and only -- eta-expansion!! *)
+(* The reason we only need to call reflect on arrow type is because reflect is only
+   concerning eta-conversion on variables with different types, and lambda exressions
+   (expressions with arrow type) is the only place variables get introduced. *)
 (* reflect : ty -> tm -> sem *)
 let rec reflect ty t =
   match ty with
@@ -87,8 +90,11 @@ let nbe ty t = meaning Empty t |> reify ty
 let t1 = Lam ("f", Var "f")
 let t2 = Lam ("f", Lam ("x", App (Var "f", Var "x")))
 let ty = TyArrow (TyArrow (TyBasic "A", TyBasic "B"), TyArrow (TyBasic "A", TyBasic "B"))
+let t' = Lam ("p", Var "p")
+let ty' = TyArrow (TyProd (TyBasic "A", TyBasic "B"), TyProd (TyBasic "A", TyBasic "b"))
 let result1 = nbe ty t1
 let result2 = nbe ty t2
+let result3 = nbe ty' t'
 
 (* The `meaning` function is the first pass to convert terms in our language into the
    seamntics domain. There's one caveat in this translation: the conversion of lambda
