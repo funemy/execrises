@@ -59,12 +59,6 @@ let rec lookup ctx x =
   | Empty -> raise LookupFailure
 ;;
 
-(* t1 = \f -> f *)
-(* t1 = t2 : (A->B) -> (A->B)*)
-let t1 = Lam ("f", Var "f")
-let t2 = Lam ("f", Lam ("x", App (Var "f", Var "x")))
-let ty1 = TyArrow (TyArrow (TyBasic "A", TyBasic "B"), TyArrow (TyBasic "A", TyBasic "B"))
-
 (* \f -> \x. f x *)
 (* meaning : ctx -> tm -> sem *)
 let rec meaning ctx t =
@@ -87,6 +81,14 @@ let rec meaning ctx t =
 ;;
 
 let nbe ty t = meaning Empty t |> reify ty
+
+(* t1 = \f -> f *)
+(* t1 = t2 : (A->B) -> (A->B)*)
+let t1 = Lam ("f", Var "f")
+let t2 = Lam ("f", Lam ("x", App (Var "f", Var "x")))
+let ty = TyArrow (TyArrow (TyBasic "A", TyBasic "B"), TyArrow (TyBasic "A", TyBasic "B"))
+let result1 = nbe ty t1
+let result2 = nbe ty t2
 
 (* The `meaning` function is the first pass to convert terms in our language into the
    seamntics domain. There's one caveat in this translation: the conversion of lambda
