@@ -198,3 +198,11 @@ test6 :: Res Expr
 test6 =
     let expr = App (Var (Name "x")) (Var (Name "x"))
      in normalize expr
+
+-- It is interesting to compare this with \f . f,
+-- since in untyped lambda calculus, we don't do eta-expansion
+-- \f . \x . f x
+test7 :: Res Expr
+test7 =
+    let expr = Lam (Name "f") (Lam (Name "x") (App (Var (Name "f")) (Var (Name "x"))))
+     in normalize expr
