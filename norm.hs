@@ -90,13 +90,12 @@ apply (VClosure env n b) arg =
 apply (VNeutral neu) arg = return $ VNeutral $ NApp neu arg
 
 readback :: [Name] -> Value -> Res Expr
-readback used closure@(VClosure _ n _) =
+readback used closure@(VClosure _ n _) = do
     let n' = freshen used n
-        used' = n' : used
-     in do
-            val <- apply closure (VNeutral (NVar n'))
-            b' <- readback used' val
-            return $ Lam n' b'
+    let used' = n' : used
+    val <- apply closure (VNeutral (NVar n'))
+    b' <- readback used' val
+    return $ Lam n' b'
 readback _ (VNeutral (NVar n)) = return $ Var n
 readback used (VNeutral (NApp neu val)) = do
     neu' <- readback used (VNeutral neu)
