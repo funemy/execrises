@@ -1,6 +1,11 @@
 data St a = Mk a (St a)
     deriving (Show)
 
+data St' a = St'
+    { hd' :: a
+    , tl' :: St' a
+    }
+
 instance Functor St where
     fmap f (Mk h t) = Mk (f h) (fmap f t)
 
