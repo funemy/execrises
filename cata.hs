@@ -124,61 +124,52 @@ mutu' alg1 alg2 m1 m2 = (x m1, y m2)
     y = alg2 . bimap x y . unIn2
 
 -- Ron's example translated into haskell
-data Nat1F x y = Zero1 | Succ1 x y
-data Nat2F x y = Zero2 | Succ2 x y
+data NatBF x y = ZeroBF | SuccBF x y
 
-type Nat1 = Mu1 Nat1F Nat2F
-type Nat2 = Mu2 Nat1F Nat2F
+type Nat1 = Mu1 NatBF NatBF
+type Nat2 = Mu2 NatBF NatBF
 
 -- The functor and bifunctor definitions are all standard
 -- (You can derive their implementations)
-instance Functor (Nat1F x) where
-  fmap f Zero1 = Zero1
-  fmap f (Succ1 x y) = Succ1 x (f y)
+instance Functor (NatBF x) where
+  fmap f ZeroBF = ZeroBF
+  fmap f (SuccBF x y) = SuccBF x (f y)
 
-instance Bifunctor Nat1F where
-  bimap f g Zero1 = Zero1
-  bimap f g (Succ1 x y) = Succ1 (f x) (g y)
-
-instance Functor (Nat2F x) where
-  fmap f Zero2 = Zero2
-  fmap f (Succ2 x y)= Succ2 x (f y)
-
-instance Bifunctor Nat2F where
-  bimap f g Zero2 = Zero2
-  bimap f g (Succ2 x y) = Succ2 (f x) (g y)
+instance Bifunctor NatBF where
+  bimap f g ZeroBF = ZeroBF
+  bimap f g (SuccBF x y) = SuccBF (f x) (g y)
 
 -- At this point, you probably already see how repetetive this construction is.
 -- We basically have to duplicate everything between Nat1 and Nat2
 
 -- But let's try to finish this example by defining their f-algebras
 -- We basically defined Nat twice (which the exact same definition), so that we can write two separate f-algebras
-alg1 :: Nat1F Int Int -> Int
-alg1 Zero1 = 0
-alg1 (Succ1 x y) = x + y
+alg1 :: NatBF Int Int -> Int
+alg1 ZeroBF = 0
+alg1 (SuccBF x y) = x + y
 
-alg2 :: Nat2F Int Int -> Int
-alg2 Zero2 = 1
-alg2 (Succ2 x y) = x
+alg2 :: NatBF Int Int -> Int
+alg2 ZeroBF = 1
+alg2 (SuccBF x y) = x
 
 -- some constants for testing
 zero1 :: Nat1
-zero1 = In1 Zero1
+zero1 = In1 ZeroBF
 
 zero2 :: Nat2
-zero2 = In2 Zero2
+zero2 = In2 ZeroBF
 
 one1 :: Nat1
-one1 = In1 (Succ1 zero1 zero2)
+one1 = In1 (SuccBF zero1 zero2)
 
 one2 :: Nat2
-one2 = In2 (Succ2 zero1 zero2)
+one2 = In2 (SuccBF zero1 zero2)
 
 succ1 :: Nat1 -> Nat2 -> Nat1
-succ1 n1 n2 = In1 (Succ1 n1 n2)
+succ1 n1 n2 = In1 (SuccBF n1 n2)
 
 succ2 :: Nat1 -> Nat2 -> Nat2
-succ2 n1 n2 = In2 (Succ2 n1 n2)
+succ2 n1 n2 = In2 (SuccBF n1 n2)
 
 two1 :: Nat1
 two1 = succ1 one1 one2
