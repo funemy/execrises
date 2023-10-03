@@ -103,7 +103,7 @@ fact' = snd . cata algFact'
 
 -- TODO: cata to mutu
 
--- This is the same definition as the paper
+-- This is the mutu defined in the paper
 mutu :: forall f a b . Functor f => (f (a,b) -> a) -> (f (a, b) -> b) -> (Mu f -> a, Mu f -> b)
 mutu f g = (fst . cata alg, snd . cata alg)
   where
@@ -117,18 +117,129 @@ newtype Mu2 f g = In2 { unIn2 :: g (Mu1 f g) (Mu2 f g) }
 mutu' :: (Bifunctor f, Bifunctor g) => (f a b -> a) -> (g a b -> b) -> Mu1 f g -> Mu2 f g -> (a, b)
 mutu' alg1 alg2 m1 m2 = (x m1, y m2)
   where
-    -- intuitively, x handles the `f` component of the substructure of out mutually inductive definition
+    -- intuitively, x handles the `f` component of the substructure of our mutually inductive definition
     -- dually, y handles the `g` component
-    -- the mutual recursion scheme is reflected by `bimap x y`
+    -- the mutual recursion scheme is captured by the `bimap x y`
     x = alg1 . bimap x y . unIn1
     y = alg2 . bimap x y . unIn2
+
+-- Ron's example translated into haskell
+data Nat1F x y = Zero1 | Succ1 x y
+data Nat2F x y = Zero2 | Succ2 x y
+
+type Nat1 = Mu1 Nat1F Nat2F
+type Nat2 = Mu2 Nat1F Nat2F
+
+-- The functor and bifunctor definitions are all standard
+-- (You can derive their implementations)
+instance Functor (Nat1F x) where
+  fmap f Zero1 = Zero1
+  fmap f (Succ1 x y) = Succ1 x (f y)
+
+instance Bifunctor Nat1F where
+  bimap f g Zero1 = Zero1
+  bimap f g (Succ1 x y) = Succ1 (f x) (g y)
+
+instance Functor (Nat2F x) where
+  fmap f Zero2 = Zero2
+  fmap f (Succ2 x y)= Succ2 x (f y)
+
+instance Bifunctor Nat2F where
+  bimap f g Zero2 = Zero2
+  bimap f g (Succ2 x y) = Succ2 (f x) (g y)
+
+-- At this point, you probably already see how repetetive this construction is.
+-- We basically have to duplicate everything between Nat1 and Nat2
+
+-- But let's try to finish this example by defining their f-algebras
+-- We basically defined Nat twice (which the exact same definition), so that we can write two separate f-algebras
+alg1 :: Nat1F Int Int -> Int
+alg1 Zero1 = 0
+alg1 (Succ1 x y) = x + y
+
+alg2 :: Nat2F Int Int -> Int
+alg2 Zero2 = 1
+alg2 (Succ2 x y) = x
+
+-- some constants for testing
+zero1 :: Nat1
+zero1 = In1 Zero1
+
+zero2 :: Nat2
+zero2 = In2 Zero2
+
+one1 :: Nat1
+one1 = In1 (Succ1 zero1 zero2)
+
+one2 :: Nat2
+one2 = In2 (Succ2 zero1 zero2)
+
+succ1 :: Nat1 -> Nat2 -> Nat1
+succ1 n1 n2 = In1 (Succ1 n1 n2)
+
+succ2 :: Nat1 -> Nat2 -> Nat2
+succ2 n1 n2 = In2 (Succ2 n1 n2)
+
+two1 :: Nat1
+two1 = succ1 one1 one2
+
+two2 :: Nat2
+two2 = succ2 one1 one2
+
+three1 :: Nat1
+three1 = succ1 two1 two2
+
+three2 :: Nat2
+three2 = succ2 two1 two2
+
+four1 :: Nat1
+four1 = succ1 three1 three2
+
+four2 :: Nat2
+four2 = succ2 three1 three2
+
+five1 :: Nat1
+five1 = succ1 four1 four2
+
+five2 :: Nat2
+five2 = succ2 four1 four2
+
+six1 :: Nat1
+six1 = succ1 five1 five2
+
+six2 :: Nat2
+six2 = succ2 five1 five2
+
+seven1 :: Nat1
+seven1 = succ1 six1 six2
+
+seven2 :: Nat2
+seven2 = succ2 six1 six2
+
+fibb :: Nat1 -> Int
+fibb n1 = fst $ mutu' alg1 alg2 n1 zero2
+
+-- fib 5
+test_fibb1 :: Int
+test_fibb1 = fibb five1
+
+-- fib 7
+test_fibb2 :: Int
+test_fibb2 = fibb seven1
 
 -- comutu
 newtype Nu1 f g = UnOut1 { out1 :: f (Nu1 f g) (Nu2 f g) }
 newtype Nu2 f g = UnOut2 { out2 :: g (Nu1 f g) (Nu2 f g) }
 
-comutu :: (Bifunctor f, Bifunctor g) => (a -> f a b) -> (b -> g a b) -> a -> b -> (Nu1 f g, Nu2 f g)
-comutu coalg1 coalg2 a b = (x a, y b)
+-- The comutu presented in the paper
+comutu :: (Bifunctor f, Bifunctor g) => (c -> f c c) -> (c -> g c c) -> c -> (Nu1 f g, Nu2 f g)
+comutu coalg1 coalg2 c = (x c, y c)
+  where
+    x = UnOut1 . bimap x y . coalg1
+    y = UnOut2 . bimap x y . coalg2
+
+comutu' :: (Bifunctor f, Bifunctor g) => (a -> f a b) -> (b -> g a b) -> a -> b -> (Nu1 f g, Nu2 f g)
+comutu' coalg1 coalg2 a b = (x a, y b)
   where
     x = UnOut1 . bimap x y . coalg1
     y = UnOut2 . bimap x y . coalg2
