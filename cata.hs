@@ -117,6 +117,9 @@ newtype Mu2 f g = In2 { unIn2 :: g (Mu1 f g) (Mu2 f g) }
 mutu' :: (Bifunctor f, Bifunctor g) => (f a b -> a) -> (g a b -> b) -> Mu1 f g -> Mu2 f g -> (a, b)
 mutu' alg1 alg2 m1 m2 = (x m1, y m2)
   where
+    -- intuitively, x handles the `f` component of the substructure of out mutually inductive definition
+    -- dually, y handles the `g` component
+    -- the mutual recursion scheme is reflected by `bimap x y`
     x = alg1 . bimap x y . unIn1
     y = alg2 . bimap x y . unIn2
 
