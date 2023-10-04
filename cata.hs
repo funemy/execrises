@@ -153,6 +153,11 @@ alg2 ZeroBF = 1
 alg2 (SuccBF x y) = x
 
 -- some constants for testing
+-- NOTE: the awkward thing here is to construct values in both nat1 and nat2.
+--  This cannot really be avoid because of the definition of Mu1 and Mu2
+--  But notice the construction of nat1 and nat2 values are identical modulo the constructor names.
+--  This also suggests that the original `mutu` is more desirable if the mutually recursive functions
+--  are defined on the same inductive datatypes.
 zero1 :: Nat1
 zero1 = In1 ZeroBF
 
@@ -207,6 +212,11 @@ seven1 = succ1 six1 six2
 seven2 :: Nat2
 seven2 = succ2 six1 six2
 
+-- Notice that the second nat (value of Nat2) we pass in does not matter.
+-- Therefore I used a dummy value zero2.
+-- This intuitively makes sense because the f-algebra `alg2` is only useful as an aux function,
+-- in other words, its usage is for handling the substructure of `n1`.
+-- Therefore at the top level we just want to give a dummy value for the 2nd element of the pair.
 fibb :: Nat1 -> Int
 fibb n1 = fst $ mutu' alg1 alg2 n1 zero2
 
