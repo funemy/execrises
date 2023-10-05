@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Main where
+module Morphism where
 
 import Prelude hiding (succ)
 import Data.Bifunctor (Bifunctor, bimap)
@@ -244,7 +244,3 @@ comutu' coalg1 coalg2 a b = (x a, y b)
   where
     x = UnOut1 . bimap x y . coalg1
     y = UnOut2 . bimap x y . coalg2
-
-
-main :: IO ()
-main = putStrLn "Hello World"
