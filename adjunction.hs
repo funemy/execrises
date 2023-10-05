@@ -1,5 +1,7 @@
 module Adjunction where
 
+-- Notice left/rightAdjunct and unit/counit are mutually recursive
+-- They are two equivlant ways of defining adjunctions
 class (Functor f, Functor g) => Adjunction f g where
   leftAdjunct :: (f a -> b) -> a -> g b
   leftAdjunct h a =  fmap h (unit a)
@@ -15,6 +17,33 @@ class (Functor f, Functor g) => Adjunction f g where
   -- id :: g a -> g a
   counit :: f (g a) -> a
   counit = rightAdjunct id
+
+newtype F s a =  F (a, s)
+  deriving (Functor)
+
+newtype G s a =  G (s -> a)
+  deriving (Functor)
+
+instance Adjunction (F s) (G s) where
+  --             ((a, s) -> b) -> a -> (s -> a)
+  leftAdjunct :: (F s a -> b) -> a -> G s b
+  leftAdjunct f a = G (\s -> f (F (a, s)))
+
+  --              (a -> s -> b) -> (a, s) -> b
+  rightAdjunct :: (a -> G s b) -> F s a -> b
+  rightAdjunct f (F (a, s)) = case f a of G f' -> f' s
+
+  --      a -> s -> (a, s)
+  unit :: a -> G s (F s a)
+  unit a = G (\s -> F (a, s))
+
+  --        (s -> a, s) -> a
+  counit :: F s (G s a) -> a
+  counit (F (G f, a)) = f a
+
+-- impossible to define below
+-- instance Adjunction (G s) (F s) where
+
 
 class Functor w => Comonad w where
   extract :: w a -> a
