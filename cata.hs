@@ -2,14 +2,14 @@
 
 module Morphism where
 
-import Prelude hiding (succ)
 import Data.Bifunctor (Bifunctor, bimap)
+import Prelude hiding (succ)
 
-newtype Fix f = In { unIn :: f (Fix f) }
+newtype Fix f = In {unIn :: f (Fix f)}
 
 type Mu f = Fix f
 
-cata :: Functor f => (f a -> a) -> Mu f -> a
+cata :: (Functor f) => (f a -> a) -> Mu f -> a
 cata alg = alg . fmap (cata alg) . unIn
 
 delta :: (a -> b) -> (a -> c) -> a -> (b, c)
@@ -68,8 +68,9 @@ mul n = cata (algMul n)
 ten :: Nat
 ten = two `mul` five
 
-para :: Functor f => (f (Mu f, a) -> a) -> Mu f -> a
+para :: (Functor f) => (f (Mu f, a) -> a) -> Mu f -> a
 para alg = snd . cata ((In . fmap fst) `delta` alg)
+
 -- para alg n = snd $ ((In . fmap fst) `delta` alg) $ fmap (cata ((In . fmap fst) `delta` alg)) (unIn n)
 -- para alg n = snd $ ((In . fmap fst) `delta` alg) $ fmap (cata ((In . fmap fst) `delta` alg)) Zero
 -- para alg n = snd $ ((In . fmap fst) `delta` alg) Zero
@@ -104,24 +105,24 @@ fact' = snd . cata algFact'
 -- TODO: cata to mutu
 
 -- This is the mutu defined in the paper
-mutu :: forall f a b . Functor f => (f (a,b) -> a) -> (f (a, b) -> b) -> (Mu f -> a, Mu f -> b)
+mutu :: forall f a b. (Functor f) => (f (a, b) -> a) -> (f (a, b) -> b) -> (Mu f -> a, Mu f -> b)
 mutu f g = (fst . cata alg, snd . cata alg)
-  where
-    alg :: f (a, b) -> (a, b)
-    alg x = (f x, g x)
+ where
+  alg :: f (a, b) -> (a, b)
+  alg x = (f x, g x)
 
 -- can we generalize mutu?
-newtype Mu1 f g = In1 { unIn1 :: f (Mu1 f g) (Mu2 f g) }
-newtype Mu2 f g = In2 { unIn2 :: g (Mu1 f g) (Mu2 f g) }
+newtype Mu1 f g = In1 {unIn1 :: f (Mu1 f g) (Mu2 f g)}
+newtype Mu2 f g = In2 {unIn2 :: g (Mu1 f g) (Mu2 f g)}
 
 mutu' :: (Bifunctor f, Bifunctor g) => (f a b -> a) -> (g a b -> b) -> Mu1 f g -> Mu2 f g -> (a, b)
 mutu' alg1 alg2 m1 m2 = (x m1, y m2)
-  where
-    -- intuitively, x handles the `f` component of the substructure of our mutually inductive definition
-    -- dually, y handles the `g` component
-    -- the mutual recursion scheme is captured by the `bimap x y`
-    x = alg1 . bimap x y . unIn1
-    y = alg2 . bimap x y . unIn2
+ where
+  -- intuitively, x handles the `f` component of the substructure of our mutually inductive definition
+  -- dually, y handles the `g` component
+  -- the mutual recursion scheme is captured by the `bimap x y`
+  x = alg1 . bimap x y . unIn1
+  y = alg2 . bimap x y . unIn2
 
 -- Ron's example translated into haskell
 data NatBF x y = ZeroBF | SuccBF x y
@@ -229,18 +230,28 @@ test_fibb2 :: Int
 test_fibb2 = fibb seven1
 
 -- comutu
-newtype Nu1 f g = UnOut1 { out1 :: f (Nu1 f g) (Nu2 f g) }
-newtype Nu2 f g = UnOut2 { out2 :: g (Nu1 f g) (Nu2 f g) }
+newtype Nu1 f g = UnOut1 {out1 :: f (Nu1 f g) (Nu2 f g)}
+newtype Nu2 f g = UnOut2 {out2 :: g (Nu1 f g) (Nu2 f g)}
 
 -- The comutu presented in the paper
 comutu :: (Bifunctor f, Bifunctor g) => (c -> f c c) -> (c -> g c c) -> c -> (Nu1 f g, Nu2 f g)
 comutu coalg1 coalg2 c = (x c, y c)
-  where
-    x = UnOut1 . bimap x y . coalg1
-    y = UnOut2 . bimap x y . coalg2
+ where
+  x = UnOut1 . bimap x y . coalg1
+  y = UnOut2 . bimap x y . coalg2
 
 comutu' :: (Bifunctor f, Bifunctor g) => (a -> f a b) -> (b -> g a b) -> a -> b -> (Nu1 f g, Nu2 f g)
 comutu' coalg1 coalg2 a b = (x a, y b)
-  where
-    x = UnOut1 . bimap x y . coalg1
-    y = UnOut2 . bimap x y . coalg2
+ where
+  x = UnOut1 . bimap x y . coalg1
+  y = UnOut2 . bimap x y . coalg2
+
+-- cofree and histo
+data Cofree f a where
+  (:<) :: a -> f (Cofree f a) -> Cofree f a
+
+extract :: Cofree f a -> a
+extract (a :< _) = a
+
+histo :: (Functor f) => (f (Cofree f a) -> a) -> Mu f -> a
+histo alg = extract . cata (\x -> alg x :< x)
