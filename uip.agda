@@ -26,3 +26,27 @@ module HeteroEq where
   uip g h = J h (λ a≡x → g ≡ a≡x) (J g (λ a≡x → a≡x ≡ refl) refl)
 
 module HomoEq where
+  private
+    variable
+      ℓ : Level
+
+  data _≡_ {A : Set ℓ} (a : A) : A -> Set ℓ where
+    refl : a ≡ a
+
+  J : {A : Set ℓ} → {a : A} → {b : A}
+      → (target : a ≡ b)
+      → (motive : {x : A} → a ≡ x → Set ℓ)
+      → (base : motive refl)
+      → motive target
+  J refl motive base = base
+
+  -- You can still prove uip of homogeneous ≡ using dependent pattern matching
+  uip' : {A : Set ℓ} → {a : A} → {b : A}
+         → (g : a ≡ b) → (h : a ≡ b) → g ≡ h
+  uip' refl refl = refl
+
+  uip : {A : Set ℓ} → {a : A} → {b : A}
+        → (g : a ≡ b) → (h : a ≡ b) → g ≡ h
+  -- we cannot put `g ≡ a≡x` in the first hole anymore
+  uip g h = J h (λ a≡x → {!!}) {!!}
+
