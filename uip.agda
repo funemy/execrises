@@ -23,6 +23,6 @@ module HeteroEq where
 
   uip : {A : Set ℓa} → {B : Set ℓb} → {a : A} → {b : B}
         → (g : a ≡ b) → (h : a ≡ b) → g ≡ h
-  uip {_} {_} {_} {_} {a} {b} g h = J h (λ a≡x → g ≡ a≡x) (J g (λ a≡x → a≡x ≡ refl) refl)
+  uip g h = J h (λ a≡x → g ≡ a≡x) (J g (λ a≡x → a≡x ≡ refl) refl)
 
 module HomoEq where
