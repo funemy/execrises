@@ -1,3 +1,4 @@
+{-- ice1000 has a relevant blog: https://ice1000.org/2020/08-15-AxiomK.html --}
 module UIP where
 
 open import Agda.Primitive
