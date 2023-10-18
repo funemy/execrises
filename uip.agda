@@ -34,6 +34,41 @@ module HomoEq where
   data _≡_ {A : Set ℓ} (a : A) : A -> Set ℓ where
     refl : a ≡ a
 
+  -- An intuition of the J rule:
+  -- First, we want to understand what `motive` is doing. `motive` returns a Set/Type,
+  -- therefore `motive` is a function that *constructs* a proposition.
+  --
+  -- Second, the signature of `motive` may look weird at the first place, since it's
+  -- universally quantifying over all `x` of type A.
+  -- However, notice that _≡_ is not defined recursively, therefore, we will only
+  -- generate two propositions using motive.
+  --
+  -- The first one is `motive refl` (the type of base).
+  -- The type of `refl` here is `a ≡ a`.
+  -- Therefore, this is a proposition that mentions (or depends on) `a` and the proof
+  -- of `a ≡ a` (i.e., refl).
+  -- Let's denote it as P(a, pf : a ≡ a)
+  --
+  -- Similarly, the second application of `motive`, i.e., `motive target` (the return type),
+  -- gives us a proposition P(b, pf' : a ≡ b)
+  --
+  -- Now, the type of J rule can be simplified to
+  -- J : a ≡ b → P(a, pf : a ≡ a) → P(b, pf' : a ≡ b)
+  -- Now this type can be intuitively translate to natural language:
+  -- Given a proof of a ≡ b, and a proof of P which depends on a and the proof of a ≡ a,
+  -- We can conclude that the proposition P', which substitute a to b and the proof of a ≡ a
+  -- to the proof of a ≡ b, also holds.
+  --
+  -- Now it's also easy to justify why the J rule make sense.
+  -- Since we already proved a ≡ b, of course we can substitute a to b.
+  -- Since we already proved a ≡ b, and in fact, the only way to prove a ≡ b is when
+  -- b can be normalized to a, therefore the proof should be identical to a ≡ a, then
+  -- of course it's safe to substitute pf to pf'
+  --
+  -- The reasoning above is precisely reflected on the implementation of J
+  -- Since a and b are identical, the proofs of a ≡ a and a ≡ b are also identical,
+  -- there is no need for actual substitution, and instead, we can just return `base`,
+  -- i.e., the proof of "P(a, pf : a ≡ a)"
   J : {A : Set ℓ} → {a : A} → {b : A}
       → (target : a ≡ b)
       → (motive : {x : A} → a ≡ x → Set ℓ)
