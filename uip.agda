@@ -36,7 +36,8 @@ module HomoEq where
 
   -- An intuition of the J rule:
   -- First, we want to understand what `motive` is doing. `motive` returns a Set/Type,
-  -- therefore `motive` is a function that *constructs* a proposition.
+  -- therefore `motive` is a function that *constructs* a proposition,
+  -- or in logic term, `motive` is a predicate.
   --
   -- Second, the signature of `motive` may look weird at the first place, since it's
   -- universally quantifying over all `x` of type A.
@@ -75,6 +76,19 @@ module HomoEq where
       → (base : motive refl)
       → motive target
   J refl motive base = base
+
+  -- This is a directly comparison between J rule and subst
+  -- We can see from the implementation, J and subst are
+  -- computationally the same.
+  -- The difference is between the types of P and motive.
+  -- P has one less parameter then motive, therefore it's
+  -- less expressive on the predicate we can write here.
+  subst : {A : Set ℓ} → {a b : A}
+        → a ≡ b
+        → (P : A → Set ℓ)
+        → P a
+        → P b
+  subst refl _ Pa = Pa
 
   -- You can still prove uip of homogeneous ≡ using dependent pattern matching
   uip' : {A : Set ℓ} → {a : A} → {b : A}
