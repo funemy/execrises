@@ -29,6 +29,11 @@ data Value
     deriving (Eq, Show)
 
 -- NOTE:
+-- The key design of NbE is that:
+-- 1. Embedding a Neutral as a Normal requires a type annotations
+-- 2. Building a Neutral with a Normal subterm requires a type annotation.
+--
+-- NOTE:
 -- Neutrals are:
 -- 1. a variable,
 -- 2. an eliminator whose target is neutral and all other arguments are *type annotated Normals*.
@@ -39,10 +44,6 @@ data Neutral
     | NApp Neutral (Ty, Normal)
     deriving (Eq, Show)
 
--- NOTE:
--- The key design of NbE is that:
--- 1. Embedding a Neutral as a Normal requires a type annotations
--- 2. Building a Neutral with a Normal subterm requires a type annotation.
 data Normal
     = NValue Value
     | Neutral Ty Neutral
