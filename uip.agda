@@ -70,6 +70,9 @@ module HomoEq where
   -- Since a and b are identical, the proofs of a ≡ a and a ≡ b are also identical,
   -- there is no need for actual substitution, and instead, we can just return `base`,
   -- i.e., the proof of "P(a, pf : a ≡ a)"
+  --
+  -- This definition of J rule is called based path induction in HoTT
+  -- (https://www.pls-lab.org/en/Path_induction)
   J : {A : Set ℓ} → {a : A} → {b : A}
       → (target : a ≡ b)
       → (motive : {x : A} → a ≡ x → Set ℓ)
