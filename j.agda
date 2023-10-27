@@ -25,25 +25,35 @@ module J where
   J {_} {_} {a} {b} refl motive base = base a
 
   JBasedSort : Setω
-  JBasedSort = {ℓj : Level} → {A : Set ℓj} → {a : A} → {b : A}
+  JBasedSort = {ℓj ℓm : Level} → {A : Set ℓj} → {a : A} → {b : A}
       → (target : a ≡ b)
-      → (motive : (x : A) → a ≡ x → Set ℓj)
+      → (motive : (x : A) → a ≡ x → Set ℓm)
       → (base : motive a refl)
       → motive b target
 
 
   JSort : Setω
-  JSort = {ℓj : Level} → {A : Set ℓj} → {a : A} → {b : A}
+  JSort = {ℓj ℓm : Level} → {A : Set ℓj} → {a : A} → {b : A}
          → (target : a ≡ b)
-         → (motive : (x y : A) → x ≡ y → Set ℓj)
+         → (motive : (x y : A) → x ≡ y → Set ℓm)
          → (base : (z : A) → motive z z refl)
          → motive a b target
 
 
   -- Can we prove the two J rule definitions are equivalent?
   JB⇒J : JBasedSort → JSort
-  JB⇒J JB {_} {_} {a} {_} = λ target motive base → JB target (motive a) (base a)
+  JB⇒J JB {_} {_} {_} {a} {_} = λ target motive base → JB target (motive a) (base a)
 
-  -- we should also be able to define this?
+  -- Amazing!!!!
+  -- Following the HoTT book
   J⇒JB : JSort → JBasedSort
-  J⇒JB = {!!}
+  J⇒JB J {ℓj} {ℓm} {A} {a} {b} target motive base = f a b target motive base
+    where
+       D : (x y : A) → x ≡ y → Set (ℓj ⊔ (lsuc ℓm))
+       D x y x≡y = (C : (z : A) → x ≡ z → Set ℓm) → C x refl → C y x≡y
+
+       d : (x : A) → D x x refl
+       d x m c = c
+
+       f : (x y : A) → (p : x ≡ y) → D x y p
+       f x y p = J p D d
