@@ -47,7 +47,7 @@ module J where
   -- Amazing!!!!
   -- Following the HoTT book
   J⇒JB : JSort → JBasedSort
-  J⇒JB J {ℓj} {ℓm} {A} {a} {b} target motive base = f a b target motive base
+  J⇒JB J {ℓj} {ℓm} {A} {a} {b} = f a b
     where
        D : (x y : A) → x ≡ y → Set (ℓj ⊔ (lsuc ℓm))
        D x y x≡y = (C : (z : A) → x ≡ z → Set ℓm) → C x refl → C y x≡y
