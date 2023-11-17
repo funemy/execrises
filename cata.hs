@@ -71,12 +71,14 @@ ten = two `mul` five
 para :: (Functor f) => (f (Mu f, a) -> a) -> Mu f -> a
 para alg = snd . cata ((In . fmap fst) `delta` alg)
 
+-- fact zero
 -- para alg n = snd $ ((In . fmap fst) `delta` alg) $ fmap (cata ((In . fmap fst) `delta` alg)) (unIn n)
 -- para alg n = snd $ ((In . fmap fst) `delta` alg) $ fmap (cata ((In . fmap fst) `delta` alg)) Zero
 -- para alg n = snd $ ((In . fmap fst) `delta` alg) Zero
 -- para alg n = snd $ ((In . fmap fst) Zero, alg Zero)
 -- para alg n = snd $ ((In one), one)
 --
+-- fact one
 -- para alg n = snd $ ((In . fmap fst) `delta` alg) $ fmap (cata ((In . fmap fst) `delta` alg)) (unIn n)
 -- para alg n = snd $ ((In . fmap fst) `delta` alg) $ fmap (cata ((In . fmap fst) `delta` alg)) (Succ (In Zero))
 -- para alg n = snd $ ((In . fmap fst) `delta` alg) $ Succ (cata ((In . fmap fst) `delta` alg) $ In Zero)
