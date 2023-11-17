@@ -76,17 +76,17 @@ para alg = snd . cata ((In . fmap fst) `delta` alg)
 -- para alg n = snd $ ((In . fmap fst) `delta` alg) $ fmap (cata ((In . fmap fst) `delta` alg)) Zero
 -- para alg n = snd $ ((In . fmap fst) `delta` alg) Zero
 -- para alg n = snd $ ((In . fmap fst) Zero, alg Zero)
--- para alg n = snd $ ((In one), one)
+-- para alg n = snd $ ((In Zero), one)
 --
 -- fact one
 -- para alg n = snd $ ((In . fmap fst) `delta` alg) $ fmap (cata ((In . fmap fst) `delta` alg)) (unIn n)
 -- para alg n = snd $ ((In . fmap fst) `delta` alg) $ fmap (cata ((In . fmap fst) `delta` alg)) (Succ (In Zero))
 -- para alg n = snd $ ((In . fmap fst) `delta` alg) $ Succ (cata ((In . fmap fst) `delta` alg) $ In Zero)
--- para alg n = snd $ ((In . fmap fst) (Succ (In one, one)), alg (Succ (In one, one)))
--- para alg n = snd $ ((In . fmap fst) (Succ (In one, one)), one)
--- para alg n = snd $ ((In $ Succ (fst (In one, one))) , one)
--- para alg n = snd $ ((In (Succ (In one)) , one)
--- para alg n = snd $ (two , one)
+-- para alg n = snd $ ((In . fmap fst) (Succ (In Zero, one)), alg (Succ (In Zero, one)))
+-- para alg n = snd $ ((In . fmap fst) (Succ (In Zero, one)), one)
+-- para alg n = snd $ ((In $ Succ (fst (In Zero, one))) , one)
+-- para alg n = snd $ ((In (Succ (In Zero)) , one)
+-- para alg n = snd $ (one , one)
 
 algFact :: NatF (Nat, Nat) -> Nat
 algFact Zero = one
@@ -103,8 +103,6 @@ algFact' (Succ (prev, b)) = (succ prev, prev `mul` b)
 -- factorial using catamorphism
 fact' :: Nat -> Nat
 fact' = snd . cata algFact'
-
--- TODO: cata to mutu
 
 -- This is the mutu defined in the paper
 mutu :: forall f a b. (Functor f) => (f (a, b) -> a) -> (f (a, b) -> b) -> (Mu f -> a, Mu f -> b)
