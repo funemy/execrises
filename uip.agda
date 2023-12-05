@@ -73,14 +73,22 @@ module HomoEq where
   --
   -- This definition of J rule is called based path induction in HoTT
   -- (https://www.pls-lab.org/en/Path_induction)
-  J : {A : Set ℓ} → {a : A} → {b : A}
+  J : {A : Set ℓ} → {a b : A}
       → (target : a ≡ b)
       → (motive : {x : A} → a ≡ x → Set ℓ)
       → (base : motive refl)
       → motive target
   J refl motive base = base
 
-  -- This is a directly comparison between J rule and subst
+  -- Axiom K, presented in a way that's easy to compare with the J above
+  K : {A : Set ℓ} {a : A}
+      → (target : a ≡ a)
+      → (motive : a ≡ a → Set ℓ)
+      → (base : motive refl)
+      → motive target
+  K refl motive base = base
+
+  -- This is a directly comparison between J rule and subst.
   -- We can see from the implementation, J and subst are
   -- computationally the same.
   -- The difference is between the types of P and motive.
@@ -93,13 +101,32 @@ module HomoEq where
         → P b
   subst refl _ Pa = Pa
 
+  -- This shows you can implement subst using J
+  subst' : {A : Set ℓ} → {a b : A}
+        → a ≡ b
+        → (P : A → Set ℓ)
+        → P a
+        → P b
+  subst' a≡b P Pa = J a≡b (λ {a} x → P a) Pa
+
   -- You can still prove uip of homogeneous ≡ using dependent pattern matching
-  uip' : {A : Set ℓ} → {a : A} → {b : A}
-         → (g : a ≡ b) → (h : a ≡ b) → g ≡ h
+  uip' : {A : Set ℓ} {a b : A} →
+         (g : a ≡ b) → (h : a ≡ b) → g ≡ h
   uip' refl refl = refl
 
-  uip : {A : Set ℓ} → {a : A} → {b : A}
-        → (g : a ≡ b) → (h : a ≡ b) → g ≡ h
-  -- we cannot put `g ≡ a≡x` in the first hole anymore
-  uip g h = J h (λ a≡x → {!!}) {!!}
+  -- uip : {A : Set ℓ} → {a b : A} →
+  --       (g : a ≡ b) → (h : a ≡ b) → g ≡ h
+  -- -- we cannot put `g ≡ a≡x` in the first hole anymore
+  -- uip g h = J h (λ a≡x → {!!}) {!!}
+
+  -- Since we also defined K, let's try prove UIP using K (and inevitably J)
+  -- We first prove reflexivity proofs are unique
+  uip-refl : {A : Set ℓ} {a : A} →
+             (g : a ≡ a) → (h : a ≡ a) → g ≡ h
+  uip-refl g h = K g (λ p → p ≡ h) (K h (λ p' → refl ≡ p') refl)
+
+  -- Now we can prove UIP by generalizing uip-refl
+  uip'' : {A : Set ℓ} {a b : A} →
+          (g : a ≡ b) → (h : a ≡ b) → g ≡ h
+  uip'' {_} {A} {a} {b} g = J g (λ {x} p → (q : a ≡ x) → p ≡ q) (λ q → uip-refl refl q)
 
