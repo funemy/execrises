@@ -1,14 +1,14 @@
-{-# LANGUAGE LambdaCase #-}
 -- Selective Applicative Functor
 -- https://dl.acm.org/doi/abs/10.1145/3341694
+{-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_GHC -W #-}
 {-# OPTIONS_GHC -Wredundant-constraints #-}
 
 module SelectiveFunctor where
 
+import Data.Bool (bool)
 import Data.Function ((&))
 import Prelude hiding (Applicative (..), Either (..), Functor (..), Monad, either, (<$>), (>>=))
-import Data.Bool (bool)
 
 data Either a b
     = Left a
@@ -92,14 +92,14 @@ apS' f m = select (Left <$> m) f
 --
 -- The actual meaning of whenS depends the on impl of select
 -- If select is implemented as selectM, then the effect will be executed when the bool is True.
-whenS :: Selective f => f Bool -> f () -> f ()
+whenS :: (Selective f) => f Bool -> f () -> f ()
 whenS x y = selector <*? effect
- where
-  -- if we flip the order of Right and Left, we get unlessS
-  selector = bool (Right ()) (Left ()) <$> x
-  effect = const <$> y
+  where
+    -- if we flip the order of Right and Left, we get unlessS
+    selector = bool (Right ()) (Left ()) <$> x
+    effect = const <$> y
 
-branch :: Selective f => f (Either a b) -> f (a -> c) -> f (b -> c) -> f c
+branch :: (Selective f) => f (Either a b) -> f (a -> c) -> f (b -> c) -> f c
 branch x l r = fmap (fmap Left) x <*? fmap (fmap Right) l <*? r
 
 -- FIXME: another WRONG impl:
@@ -108,24 +108,24 @@ branch x l r = fmap (fmap Left) x <*? fmap (fmap Right) l <*? r
 -- The distinction between branch and branch' therefore is a bit like selectM and selectA.
 -- As a result, this wrong impl will execute both effects (i.e., the effects of l and r) unconditionally,
 -- on the other hand, branch will only trigger one effect based on the value of Either a b.
-branch' :: Selective f => f (Either a b) -> f (a -> c) -> f (b -> c) -> f c
+branch' :: (Selective f) => f (Either a b) -> f (a -> c) -> f (b -> c) -> f c
 branch' x l r = (\e f g -> either f g e) <$> x <*> l <*> r
 
 -- Below is an example showing the difference between branch and branch'
 -- test2 shows that the effect of [plus1, plus1] (here we are using the list monad, so the effect is essentially duplication) happened
 -- on both Right and Left (both 0 and 3 are duplicated), while in test1, the effect is only happened on Left values.
 instance Functor [] where
-  fmap = map
+    fmap = map
 
 instance Applicative [] where
-  pure x = [x]
-  [] <*> _ = []
-  _ <*> [] = []
-  fs <*> xs = foldr (\f l -> l ++ fmap f xs) [] fs
+    pure x = [x]
+    [] <*> _ = []
+    _ <*> [] = []
+    fs <*> xs = foldr (\f l -> l ++ fmap f xs) [] fs
 
 instance Monad [] where
-  return = pure
-  (>>=) = flip concatMap
+    return = pure
+    (>>=) = flip concatMap
 
 instance Selective [] where
     select = selectM
@@ -142,6 +142,7 @@ minus1 x = x - 1
 -- We can see from the return value that only Lefts are duplicated
 test1 :: [Int]
 test1 = branch [Right 1, Left 2] [plus1, plus1] [minus1]
+
 -- fmap (fmap Left) [Right 1, Left 2] <*? fmap (fmap Right) [plus1, plus1] <*? [minus1]
 -- [fmap Left (Right 1), fmap Left (Left 2)] <*? fmap (fmap Right) [plus1, plus1] <*? [minus1]
 -- [Right (Left 1), Left 2] <*? fmap (fmap Right) [plus1, plus1] <*? [minus1]
@@ -153,8 +154,8 @@ test1 = branch [Right 1, Left 2] [plus1, plus1] [minus1]
 -- In contrast, here both Right and Left values are duplicated, so the effect is executed unconditionally.
 test2 :: [Int]
 test2 = branch' [Right 1, Left 2] [plus1, plus1] [minus1]
+
 -- [\f g -> either f g Right 1, \f g -> either f g Left 2] <*> [plus1, plus1] <*> [minus1]
 -- [\g -> either plus1 g Right 1, \g -> either plus1 g Right 1, \g -> either plus1 g Left 2, \g -> either plus1 g Left 2] <*> [minus1]
 -- [either plus1 minus1 Right 1, \g -> either plus1 minus1 Right 1, \g -> either plus1 minus1 Left 2, \g -> either plus1 minus1 Left 2]
 -- [0, 0, 3, 3]
-
