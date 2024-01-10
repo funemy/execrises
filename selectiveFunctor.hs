@@ -2,7 +2,6 @@
 -- https://dl.acm.org/doi/abs/10.1145/3341694
 {-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_GHC -W #-}
-{-# OPTIONS_GHC -Wredundant-constraints #-}
 
 module SelectiveFunctor where
 
@@ -108,6 +107,10 @@ branch x l r = fmap (fmap Left) x <*? fmap (fmap Right) l <*? r
 -- The distinction between branch and branch' therefore is a bit like selectM and selectA.
 -- As a result, this wrong impl will execute both effects (i.e., the effects of l and r) unconditionally,
 -- on the other hand, branch will only trigger one effect based on the value of Either a b.
+--
+-- NOTE:
+-- BTW, ideally there is a GHC flag to warn the fact that <*? is not used,
+-- therefore the class contraint can be simplify to "Applicative f"
 branch' :: (Selective f) => f (Either a b) -> f (a -> c) -> f (b -> c) -> f c
 branch' x l r = (\e f g -> either f g e) <$> x <*> l <*> r
 
