@@ -1,6 +1,7 @@
 module Contra where
 
 -- See more on Data.Functor.Contravariant
+-- and also https://github.com/rampion/kinder-functor
 
 import Prelude hiding (Functor (..))
 
