@@ -101,3 +101,43 @@ instance Algebra R where
   leq (R x) (R y) = R $ x <= y
   if_ :: R Bool -> R a -> R a -> R a
   if_ (R b) (R t) (R e) = R $ if b then t else e
+
+evalR :: R a -> a
+evalR = unR
+
+type Counter = Int
+
+freshen :: Counter -> String
+freshen c = "v" ++ show c
+
+newtype S a = S {unS :: Counter -> String}
+
+instance Algebra S where
+  int :: Int -> S Int
+  int n = S $ const (show n)
+  bool :: Bool -> S Bool
+  bool b = S $ const (show b)
+  lam :: (S a -> S b) -> S (a -> b)
+  lam f = S $ \c ->
+    let v = freshen c in
+    "(\\ " ++ v ++ " . " ++ unS (f (S $ const v)) (c + 1) ++ ")"
+  app :: S (a -> b) -> S a -> S b
+  app (S f) (S a) = S $ \c -> "(" ++ f c ++ " " ++ a c ++ ")"
+  fix :: (S a -> S a) -> S a
+  fix f = S $ \c ->
+    let v = freshen c in
+    "(fix " ++ v  ++ " . " ++ unS (f (S $ const v)) (c + 1) ++ ")"
+  add :: S Int -> S Int -> S Int
+  add (S x) (S y) = S $ \c -> "(" ++ x c ++ " + " ++ y c ++ ")"
+  sub :: S Int -> S Int -> S Int
+  sub (S x) (S y) = S $ \c -> "(" ++ x c ++ " - " ++ y c ++ ")"
+  mul :: S Int -> S Int -> S Int
+  mul (S x) (S y) = S $ \c -> "(" ++ x c ++ " * " ++ y c ++ ")"
+  leq :: S Int -> S Int -> S Bool
+  leq (S x) (S y) = S $ \c -> "(" ++ x c ++ " <= " ++ y c ++ ")"
+  if_ :: S Bool -> S a -> S a -> S a
+  if_ (S b) (S x) (S y) = S $ \c -> "(if " ++ b c ++ " then " ++ x c ++ " else " ++ y c ++ ")"
+
+evalS :: S a -> String
+evalS s = unS s 0
+
