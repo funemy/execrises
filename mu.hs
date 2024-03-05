@@ -5,8 +5,9 @@ module Cata where
 -- The difference between Fix and Mu is that
 -- Mu encode a inductive type directly as its fold
 -- Therefore it's the least-fixpoint?
+-- This encoding of Mu is isomorphic to Fix
 --
--- Is this also the tagless-final encoding?
+-- **Is this also the tagless-final or codata encoding?
 newtype Mu f = In { unIn :: forall a . (f a -> a) -> a }
 
 data ListF a b = NilF | ConsF a b
