@@ -1,9 +1,12 @@
 {-# OPTIONS_GHC -W #-}
 module Cata where
 
--- A different way to represent the fix-point on datatypes:
--- A tagless final encoding?
--- This is also the encoding in data-fix package.
+-- This definition can be found in Data.Fix package
+-- The difference between Fix and Mu is that
+-- Mu encode a inductive type directly as its fold
+-- Therefore it's the least-fixpoint?
+--
+-- Is this also the tagless-final encoding?
 newtype Mu f = In { unIn :: forall a . (f a -> a) -> a }
 
 data ListF a b = NilF | ConsF a b
