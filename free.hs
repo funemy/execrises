@@ -27,9 +27,9 @@ data ListF a b
     deriving (Show)
 
 instance Functor (ListF a) where
-  fmap :: (b -> c) -> ListF a b -> ListF a c
-  fmap _ NilF = NilF
-  fmap f (ConsF a b) = ConsF a (f b)
+    fmap :: (b -> c) -> ListF a b -> ListF a c
+    fmap _ NilF = NilF
+    fmap f (ConsF a b) = ConsF a (f b)
 
 instance (Show a, Show b) => Show (Free (ListF a) b) where
     show (Pure a) = "(Pure " ++ show a ++ ")"
