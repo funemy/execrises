@@ -8,8 +8,7 @@
 -- where the type of the hole if `a`, and the result of the computation is `r`.
 --
 -- Since the Cont monad takes a continuation as input, it is really describing
--- the CPS-style.
---
+-- values in CPS.
 --
 -- Because `Cont r a` can compute result `r` either by taking an `a -> r` or
 -- directly producing an `r`, the implementation of `Cont r a` must know how
@@ -31,13 +30,15 @@ instance Applicative (Cont r) where
   -- If we know how to produce `a`, then when given an arbitrary continuation `a -> r`,
   -- I know how to produce `r` (by plug in the `a`).
   --
-  -- The implementation of `pure` best shown why the Cont monad is doing CPS.
+  -- The implementation of `pure` best shown why the Cont monad is doing CPS transform.
   pure :: a -> Cont r a
   pure a = Cont $ \k -> k a
   (<*>) :: Cont r (a -> b) -> Cont r a -> Cont r b
   (<*>) cf ca = Cont $ \k -> runCont cf (\f -> runCont ca (k . f))
 
 instance Monad (Cont r) where
+  -- As mentioned above, `Cont` monad is representing a value in CPS,
+  -- this bind is essentially constructing programs in CPS.
   (>>=) :: Cont r a -> (a -> Cont r b) -> Cont r b
   m >>= f = Cont $ \k -> runCont m (\a -> runCont (f a) k)
 
@@ -93,5 +94,5 @@ test2 :: IO ()
 test2 =
   let cont1 = callCC $ \exit1 -> do
         e <- callCC $ \exit2 -> if True then exit1 42 else exit2 0
-        return $ (e + 1)
+        return (e + 1)
    in runCont cont1 (\a -> putStrLn ("exit with " ++ show a))
