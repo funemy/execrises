@@ -64,6 +64,12 @@ instance MonadCont (Cont r) where
   -- Taking the "final encoding" view, this is essentially:
   -- ((a -> x) -> a) -> a
   -- i.e., Peirce's law in classical logic
+  --
+  -- the `Cont r x` makes the type more informative, suggesting that this is a computation where the continuation doesn't matter,
+  -- i.e., the continuation can be an arbitrary `x -> r`, in other words, the continuation here (the rest of the computation) is
+  -- not being used, precisely because we are jumping to the continuation where `callCC` is called.
+  --
+  -- It's also not hard to see that `goto` exactly captures this semantics.
   callCC :: ((a -> Cont r x) -> Cont r a) -> Cont r a
   -- With the `goto` function defined above, we can re-define `callCC` in a more intuitive way.
   -- `callCC` calls function f with the current continuation.
@@ -77,8 +83,8 @@ instance MonadCont (Cont r) where
   -- Therefore, `escape` is just `goto k`
   -- Provided with `escape`, 'f will return a computation of `Cont r a`
   -- But now if you think about it, 'f has two ways to construct `Cont r a`.
-  -- 1. applying `escape` on a value of type 'a
-  -- 2. not using `escape`, but directly return a `Cont r a`
+  -- 1. Applying `escape` on a value of type 'a
+  -- 2. Not using `escape`, but directly return a `Cont r a`
   -- Approach 1 provides an "early escape" for 'f to return to the current continuation earlier, without finishing its remaining computation.
   callCC f = Cont $ \k -> runCont (f (goto k)) k
   -- callCC f = Cont $ \k -> runCont (f (\a -> Cont (\_ -> k a))) k
