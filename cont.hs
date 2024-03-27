@@ -1,26 +1,37 @@
--- Cont datatype encode the fact that:
---  We know how to compute an intermediate value of type 'a,
---  if we are given a continuation to finish the computation,
---  then we can compute the value of type 'r.
+-- Cont is a monad encoding the computation that:
+--  takes a continuation (a -> r), and produce the final result r.
 --
--- In that sense, Cont monad encapsulate "what's left to be done"
--- Or if you may, "a CPS execution environment"
+-- In that sense, Cont monad encapsulate a computation that's waiting for
+-- its continuation, where the continuation is function (a -> r).
 --
--- `runCont` can be thought of as runing some actions in some continuations
--- i.e., runCont someAction someContinuation
+-- And the continuation (a -> r) can just be seen as a computation with a hole,
+-- where the type of the hole if `a`, and the result of the computation is `r`.
+--
+-- Since the Cont monad takes a continuation as input, it is really describing
+-- the CPS-style.
+--
+--
+-- Because `Cont r a` can compute result `r` either by taking an `a -> r` or
+-- directly producing an `r`, the implementation of `Cont r a` must know how
+-- to produce a value of either `a` or `r`.
+--
+-- Another way to look at `Cont` is that this is the elimination form of value `a`.
+-- (final encoding?)
 newtype Cont r a = Cont { runCont :: (a -> r) -> r }
 
 instance Functor (Cont r) where
-  -- I already know how to compute value of type 'a
-  -- and I know how to convert value of 'a to value of 'b.
-  -- Then I know how to finish the computation of 'r as long as you give me the computation from 'b to 'r
-  --
-  -- In other word, we are closer to the final computation.
-  -- We only require a continuation starting from b now.
+  -- Since `Cont r a` knows how to produce either value `a` or `r`,
+  -- now it knows how to produce `a`, then by know the transformation `a -> b`,
+  -- it now knows how to produce a value of `v`, therefore we can construct
+  -- `Cont r b` (in the cause it knows how to produce `r`, we don't need to do anything).
   fmap :: (a -> b) -> Cont r a -> Cont r b
   fmap f c = Cont $ \k -> runCont c (k . f)
 
 instance Applicative (Cont r) where
+  -- If we know how to produce `a`, then when given an arbitrary continuation `a -> r`,
+  -- I know how to produce `r` (by plug in the `a`).
+  --
+  -- The implementation of `pure` best shown why the Cont monad is doing CPS.
   pure :: a -> Cont r a
   pure a = Cont $ \k -> k a
   (<*>) :: Cont r (a -> b) -> Cont r a -> Cont r b
@@ -28,7 +39,7 @@ instance Applicative (Cont r) where
 
 instance Monad (Cont r) where
   (>>=) :: Cont r a -> (a -> Cont r b) -> Cont r b
-  ca >>= m = Cont $ \k -> runCont ca (\a -> runCont (m a) k)
+  m >>= f = Cont $ \k -> runCont m (\a -> runCont (f a) k)
 
 test1 :: Int
 test1 =
@@ -50,24 +61,27 @@ goto c a = Cont $ \_ -> c a
 -- The current-continuation is actually the function (a -> r) hidden in `Cont r a`.
 -- We call 'f with the current continuation.
 instance MonadCont (Cont r) where
+  -- Taking the "final encoding" view, this is essentially:
+  -- ((a -> x) -> a) -> a
+  -- i.e., Peirce's law in classical logic
   callCC :: ((a -> Cont r x) -> Cont r a) -> Cont r a
-  -- callCC f = Cont $ \k -> runCont (f (\a -> Cont (\_ -> k a))) k
-  --
   -- With the `goto` function defined above, we can re-define `callCC` in a more intuitive way.
   -- `callCC` calls function f with the current continuation.
   -- The type of `f` is weird, it take a function (a -> Cont r x), and returns `Cont r a`
-  -- Let's call the first argument _escape_ operation.
-  -- _escape_ says, given a value of type 'a, I'll return a computation that will result in a value of 'r, not matter what continuation is given.
+  -- Let's call it an _escapte_ function.
+  -- The type of a _escape_ function says, given a value of type 'a, I'll return a continuation Cont r x, that eventually computes a value of r
+  -- when given (x -> r) as the rest of the computation.
   -- ('x is a free type variable, therefore universally quantified. So this `Cont r x` will compute 'r with arbitrary continuation (x -> r))
   -- This sounds like magic! The reason this is even possible, is we already have another continuation 'k captured from the syntactic scope.
-  -- Moreover, 'k is a continuation of (a -> r). So once the input value of type 'a is given, we can just apply 'k to it and get our result 'r.
+  -- Moreover, 'k is a function of type (a -> r). So once the input value of type 'a is given, we can just apply 'k to it and get our result 'r.
   -- Therefore, `escape` is just `goto k`
   -- Provided with `escape`, 'f will return a computation of `Cont r a`
   -- But now if you think about it, 'f has two ways to construct `Cont r a`.
-  -- 1. providing `escape` with a value 'a
-  -- 2. not using `escape`, but return a `Cont r a`
+  -- 1. applying `escape` on a value of type 'a
+  -- 2. not using `escape`, but directly return a `Cont r a`
   -- Approach 1 provides an "early escape" for 'f to return to the current continuation earlier, without finishing its remaining computation.
   callCC f = Cont $ \k -> runCont (f (goto k)) k
+  -- callCC f = Cont $ \k -> runCont (f (\a -> Cont (\_ -> k a))) k
 
 test2 :: IO ()
 test2 =
