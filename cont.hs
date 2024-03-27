@@ -68,7 +68,7 @@ instance MonadCont (Cont r) where
   -- With the `goto` function defined above, we can re-define `callCC` in a more intuitive way.
   -- `callCC` calls function f with the current continuation.
   -- The type of `f` is weird, it take a function (a -> Cont r x), and returns `Cont r a`
-  -- Let's call it an _escapte_ function.
+  -- Let's call it an _escape_ function.
   -- The type of a _escape_ function says, given a value of type 'a, I'll return a continuation Cont r x, that eventually computes a value of r
   -- when given (x -> r) as the rest of the computation.
   -- ('x is a free type variable, therefore universally quantified. So this `Cont r x` will compute 'r with arbitrary continuation (x -> r))
